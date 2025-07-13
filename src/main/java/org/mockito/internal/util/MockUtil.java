@@ -97,6 +97,7 @@ public class MockUtil {
     return mock != null && mockMaker.getHandler(mock) != null;
   }
 
+  @SuppressWarnings("NullAway")
   public static MockName getMockName(Object mock) {
     return getMockHandler(mock).getMockSettings().getMockName();
   }

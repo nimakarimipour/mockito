@@ -6,6 +6,7 @@ package org.mockito.internal.configuration.injection.filter;
 
 import static org.mockito.internal.util.MockUtil.getMockName;
 
+import edu.ucr.cs.riple.annotator.util.Nullability;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -44,7 +45,10 @@ public class NameBasedCandidateFilter implements MockCandidateFilter {
       Collection<Object> mocks, Field candidateFieldToBeInjected) {
     List<Object> mockNameMatches = new ArrayList<Object>();
     for (Object mock : mocks) {
-      if (candidateFieldToBeInjected.getName().equals(getMockName(mock).toString())) {
+      if (candidateFieldToBeInjected
+          .getName()
+          .equals(
+              Nullability.castToNonnull(getMockName(mock), "exceptions block null").toString())) {
         mockNameMatches.add(mock);
       }
     }
@@ -64,7 +68,9 @@ public class NameBasedCandidateFilter implements MockCandidateFilter {
       final Collection<Object> mocks,
       final Field candidateFieldToBeInjected,
       final List<Field> allRemainingCandidateFields) {
-    String mockName = getMockName(mocks.iterator().next()).toString();
+    String mockName =
+        Nullability.castToNonnull(getMockName(mocks.iterator().next()), "no documented null")
+            .toString();
 
     for (Field otherCandidateField : allRemainingCandidateFields) {
       if (!otherCandidateField.equals(candidateFieldToBeInjected)
