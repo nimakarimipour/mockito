@@ -44,18 +44,19 @@ public abstract class MockMethodDispatcher {
       return dispatcher != null && dispatcher.isConstructorMock(type);
     }
 
-  @Nullable
-  @SuppressWarnings("unused")
-  public static Object handleConstruction(
-      String identifier,
-      Class<?> type,
-      Object object,
-      Object[] arguments,
-      String[] parameterTypeNames) {
-    return DISPATCHERS
-        .get(identifier)
-        .handleConstruction(type, object, arguments, parameterTypeNames);
-  }
+  @Nullable @SuppressWarnings("unused")
+    public static Object handleConstruction(
+        String identifier,
+        Class<?> type,
+        Object object,
+        Object[] arguments,
+        String[] parameterTypeNames) {
+      MockMethodDispatcher dispatcher = DISPATCHERS.get(identifier);
+      if (dispatcher == null) {
+        throw new IllegalArgumentException("Dispatcher not found for identifier: " + identifier);
+      }
+      return dispatcher.handleConstruction(type, object, arguments, parameterTypeNames);
+    }
 
   @Nullable
   public abstract Callable<?> handle(Object instance, Method origin, Object[] arguments)
