@@ -123,34 +123,34 @@ class InstrumentationMemberAccessor implements MemberAccessor {
   }
 
   @Override
-  public Object newInstance(Constructor<?> constructor, Object... arguments)
-      throws InstantiationException, InvocationTargetException {
-    if (Modifier.isAbstract(constructor.getDeclaringClass().getModifiers())) {
-      throw new InstantiationException(
-          "Cannot instantiate abstract " + constructor.getDeclaringClass().getTypeName());
-    }
-    assureArguments(constructor, null, null, arguments, constructor.getParameterTypes());
-    try {
-      Object module = getModule.bindTo(constructor.getDeclaringClass()).invokeWithArguments();
-      String packageName = constructor.getDeclaringClass().getPackage().getName();
-      assureOpen(module, packageName);
-      MethodHandle handle =
-          ((MethodHandles.Lookup)
-                  privateLookupIn.invokeExact(
-                      constructor.getDeclaringClass(), DISPATCHER.getLookup()))
-              .unreflectConstructor(constructor);
-      try {
-        return handle.invokeWithArguments(arguments);
-      } catch (Throwable t) {
-        throw new InvocationTargetException(t);
+    public Object newInstance(Constructor<?> constructor, Object... arguments)
+        throws InstantiationException, InvocationTargetException {
+      if (Modifier.isAbstract(constructor.getDeclaringClass().getModifiers())) {
+        throw new InstantiationException(
+            "Cannot instantiate abstract " + constructor.getDeclaringClass().getTypeName());
       }
-    } catch (InvocationTargetException e) {
-      throw e;
-    } catch (Throwable t) {
-      throw new IllegalStateException(
-          "Could not construct " + constructor + " with arguments " + Arrays.toString(arguments),
-          t);
-    }
+      assureArguments(constructor, Nullability.castToNonnull(null), Nullability.castToNonnull(null), arguments, constructor.getParameterTypes());
+      try {
+        Object module = getModule.bindTo(constructor.getDeclaringClass()).invokeWithArguments();
+        String packageName = constructor.getDeclaringClass().getPackage().getName();
+        assureOpen(module, packageName);
+        MethodHandle handle =
+            ((MethodHandles.Lookup)
+                    privateLookupIn.invokeExact(
+                        constructor.getDeclaringClass(), DISPATCHER.getLookup()))
+                .unreflectConstructor(constructor);
+        try {
+          return handle.invokeWithArguments(arguments);
+        } catch (Throwable t) {
+          throw new InvocationTargetException(t);
+        }
+      } catch (InvocationTargetException e) {
+        throw e;
+      } catch (Throwable t) {
+        throw new IllegalStateException(
+            "Could not construct " + constructor + " with arguments " + Arrays.toString(arguments),
+            t);
+      }
   }
 
   @Override
