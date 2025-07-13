@@ -28,6 +28,18 @@ class InstrumentationMemberAccessor implements MemberAccessor {
   @Nullable private static final Instrumentation INSTRUMENTATION;
   private static final Dispatcher DISPATCHER;
 
+  static {
+    // The initialization logic you intend for the DISPATCHER field should be placed here
+    Dispatcher dispatcher;
+    try {
+      // Example initialization logic (you should replace this with actual logic)
+      dispatcher = new DispatcherImplementation(); // Replace with actual dispatcher setup logic
+    } catch (Exception e) {
+      throw new RuntimeException("Failed to initialize DISPATCHER", e);
+    }
+    DISPATCHER = dispatcher;
+  }
+
   @Nullable private static final Throwable INITIALIZATION_ERROR;
 
   static {
