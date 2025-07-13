@@ -24,6 +24,7 @@ import org.mockito.quality.Strictness;
 import org.mockito.stubbing.Answer;
 import org.mockito.stubbing.Stubbing;
 import org.mockito.stubbing.ValidableAnswer;
+import edu.ucr.cs.riple.annotator.util.Nullability;
 
 @SuppressWarnings("unchecked")
 public class InvocationContainerImpl implements InvocationContainer, Serializable {
@@ -35,7 +36,7 @@ public class InvocationContainerImpl implements InvocationContainer, Serializabl
   private final RegisteredInvocations registeredInvocations;
   @Nullable private final Strictness mockStrictness;
 
-  private MatchableInvocation invocationForStubbing;
+  @Nullable private MatchableInvocation invocationForStubbing;
 
   public InvocationContainerImpl(MockCreationSettings mockSettings) {
     this.registeredInvocations = createRegisteredInvocations(mockSettings);
@@ -63,25 +64,28 @@ public class InvocationContainerImpl implements InvocationContainer, Serializabl
 
   /** Adds new stubbed answer and returns the invocation matcher the answer was added to. */
   public StubbedInvocationMatcher addAnswer(
-      Answer answer, boolean isConsecutive, @Nullable Strictness stubbingStrictness) {
-    Invocation invocation = invocationForStubbing.getInvocation();
-    mockingProgress().stubbingCompleted();
-    if (answer instanceof ValidableAnswer) {
-      ((ValidableAnswer) answer).validateFor(invocation);
-    }
-
-    synchronized (stubbed) {
-      if (isConsecutive) {
-        stubbed.getFirst().addAnswer(answer);
-      } else {
-        Strictness effectiveStrictness =
-            stubbingStrictness != null ? stubbingStrictness : this.mockStrictness;
-        stubbed.addFirst(
-            new StubbedInvocationMatcher(answer, invocationForStubbing, effectiveStrictness));
+        Answer answer, boolean isConsecutive, @Nullable Strictness stubbingStrictness) {
+      if (this.invocationForStubbing == null) {
+        throw new NullPointerException("invocationForStubbing is null");
       }
-      return stubbed.getFirst();
+      Invocation invocation = invocationForStubbing.getInvocation();
+      mockingProgress().stubbingCompleted();
+      if (answer instanceof ValidableAnswer) {
+        ((ValidableAnswer) answer).validateFor(invocation);
+      }
+  
+      synchronized (stubbed) {
+        if (isConsecutive) {
+          stubbed.getFirst().addAnswer(answer);
+        } else {
+          Strictness effectiveStrictness =
+              stubbingStrictness != null ? stubbingStrictness : this.mockStrictness;
+          stubbed.addFirst(
+              new StubbedInvocationMatcher(answer, invocationForStubbing, effectiveStrictness));
+        }
+        return stubbed.getFirst();
+      }
     }
-  }
 
   @Nullable
   Object answerTo(Invocation invocation) throws Throwable {
@@ -155,10 +159,13 @@ public class InvocationContainerImpl implements InvocationContainer, Serializabl
   }
 
   public Object invokedMock() {
-    return invocationForStubbing.getInvocation().getMock();
-  }
+        if (invocationForStubbing == null) {
+            throw new NullPointerException("invocationForStubbing is null");
+        }
+        return Nullability.castToNonnull(invocationForStubbing, "explicitly checked for null").getInvocation().getMock();
+    }
 
-  public MatchableInvocation getInvocationForStubbing() {
+  @Nullable public MatchableInvocation getInvocationForStubbing() {
     return invocationForStubbing;
   }
 

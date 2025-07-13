@@ -74,31 +74,33 @@ public class ReturnsDeepStubs implements Answer<Object>, Serializable {
     return deepStub(invocation, returnTypeGenericMetadata);
   }
 
-  @Nullable
-  private Object deepStub(
-      InvocationOnMock invocation, GenericMetadataSupport returnTypeGenericMetadata)
-      throws Throwable {
-    InvocationContainerImpl container = MockUtil.getInvocationContainer(invocation.getMock());
-
-    // matches invocation for verification
-    // TODO why don't we do container.findAnswer here?
-    for (Stubbing stubbing : container.getStubbingsDescending()) {
-      if (container.getInvocationForStubbing().matches(stubbing.getInvocation())) {
-        return stubbing.answer(invocation);
+  @Nullable private Object deepStub(
+        InvocationOnMock invocation, GenericMetadataSupport returnTypeGenericMetadata)
+        throws Throwable {
+      InvocationContainerImpl container = MockUtil.getInvocationContainer(invocation.getMock());
+  
+      // matches invocation for verification
+      // TODO why don't we do container.findAnswer here?
+      if (container.getInvocationForStubbing() == null) {
+        return null;
       }
+      for (Stubbing stubbing : container.getStubbingsDescending()) {
+        if (container.getInvocationForStubbing().matches(stubbing.getInvocation())) {
+          return stubbing.answer(invocation);
+        }
+      }
+  
+      // record deep stub answer
+      StubbedInvocationMatcher stubbing =
+          recordDeepStubAnswer(
+              newDeepStubMock(returnTypeGenericMetadata, invocation.getMock()), container);
+  
+      // deep stubbing creates a stubbing and immediately uses it
+      // so the stubbing is actually used by the same invocation
+      stubbing.markStubUsed(stubbing.getInvocation());
+  
+      return stubbing.answer(invocation);
     }
-
-    // record deep stub answer
-    StubbedInvocationMatcher stubbing =
-        recordDeepStubAnswer(
-            newDeepStubMock(returnTypeGenericMetadata, invocation.getMock()), container);
-
-    // deep stubbing creates a stubbing and immediately uses it
-    // so the stubbing is actually used by the same invocation
-    stubbing.markStubUsed(stubbing.getInvocation());
-
-    return stubbing.answer(invocation);
-  }
 
   /**
    * Creates a mock using the Generics Metadata.
