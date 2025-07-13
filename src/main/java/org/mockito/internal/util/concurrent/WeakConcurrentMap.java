@@ -14,6 +14,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLong;
 import javax.annotation.Nullable;
+import edu.ucr.cs.riple.annotator.util.Nullability;
 
 /**
  * A thread-safe map with weak keys. Entries are based on a key's system hash code and keys are
@@ -344,7 +345,7 @@ public class WeakConcurrentMap<K, V> extends ReferenceQueue<K>
 
     private final K key;
 
-    final Map.Entry<WeakKey<K>, V> entry;
+    @Nullable final Map.Entry<WeakKey<K>, V> entry;
 
     private SimpleEntry(K key, @Nullable Map.Entry<WeakKey<K>, V> entry) {
       this.key = key;
@@ -357,14 +358,18 @@ public class WeakConcurrentMap<K, V> extends ReferenceQueue<K>
     }
 
     @Override
-    public V getValue() {
-      return entry.getValue();
-    }
+          public V getValue() {
+              if (entry != null) {
+                  return Nullability.castToNonnull(entry.getValue(), "Entry is not null");
+              }
+              throw new NullPointerException("Entry is null");
+      }
 
     @Override
-    public V setValue(V value) {
-      if (value == null) throw new NullPointerException();
-      return entry.setValue(value);
-    }
+      public V setValue(V value) {
+          if (value == null) throw new NullPointerException();
+          if (entry == null) throw new NullPointerException("Entry is null");
+          return entry.setValue(value);
+      }
   }
 }
