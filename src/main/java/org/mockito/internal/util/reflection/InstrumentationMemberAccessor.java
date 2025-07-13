@@ -7,6 +7,7 @@ package org.mockito.internal.util.reflection;
 import static net.bytebuddy.matcher.ElementMatchers.named;
 import static org.mockito.internal.util.StringUtil.join;
 
+import edu.ucr.cs.riple.annotator.util.Nullability;
 import java.lang.instrument.Instrumentation;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -220,7 +221,7 @@ class InstrumentationMemberAccessor implements MemberAccessor {
   public void set(Field field, Object target, Object value) throws IllegalAccessException {
     assureArguments(
         field,
-        Modifier.isStatic(field.getModifiers()) ? null : target,
+        Nullability.castToNonnull(Modifier.isStatic(field.getModifiers()) ? null : target),
         field.getDeclaringClass(),
         new Object[] {value},
         new Class<?>[] {field.getType()});
@@ -229,15 +230,13 @@ class InstrumentationMemberAccessor implements MemberAccessor {
       Object module = getModule.bindTo(field.getDeclaringClass()).invokeWithArguments();
       String packageName = field.getDeclaringClass().getPackage().getName();
       assureOpen(module, packageName);
-      // Method handles do not allow setting final fields where setAccessible(true)
-      // is required before unreflecting.
       boolean isFinal;
       if (Modifier.isFinal(field.getModifiers())) {
         isFinal = true;
         try {
           DISPATCHER.setAccessible(field, true);
         } catch (Throwable ignored) {
-          illegalAccess = true; // To distinguish from propagated illegal access exception.
+          illegalAccess = true;
           throw new IllegalAccessException("Could not make final field " + field + " accessible");
         }
       } else {
