@@ -1,0 +1,190 @@
+====================
+Type='PASS_NULLABLE', message='passing @Nullable parameter 'Modifier.isStatic(field.getModifiers()) ? null : target' where @NonNull is required'
+/home/nima/Developer/nullness-benchmarks/mockito/src/main/java/org/mockito/internal/util/reflection/InstrumentationMemberAccessor.java:196
+    assureArguments(
+Log:
+12:19:24.598 TRACE edu.ucr.cs.riple.core.checkers.nullaway.NullAway.lambda$resolveRemainingErrors$19
+==============================
+12:19:24.598 TRACE edu.ucr.cs.riple.core.checkers.nullaway.NullAway.lambda$resolveRemainingErrors$19
+CHATGPT.COUNT = 1
+12:19:24.598 TRACE edu.ucr.cs.riple.core.checkers.nullaway.NullAway.lambda$resolveRemainingErrors$19
+CHATGPT.PROMPTS SIZE = 1
+12:19:24.598 TRACE edu.ucr.cs.riple.core.checkers.nullaway.NullAway.lambda$resolveRemainingErrors$19
+Both set to 0 and cleared 0
+12:19:24.598 TRACE edu.ucr.cs.riple.core.checkers.nullaway.NullAway.lambda$resolveRemainingErrors$19
+15 : TOP LEVEL CALL TO FIX ERROR: Type='PASS_NULLABLE', message='passing @Nullable parameter 'Modifier.isStatic(field.getModifiers()) ? null : target' where @NonNull is required'
+/home/nima/Developer/nullness-benchmarks/mockito/src/main/java/org/mockito/internal/util/reflection/InstrumentationMemberAccessor.java:196
+    assureArguments(
+12:19:27.149 TRACE edu.ucr.cs.riple.core.checkers.nullaway.codefix.AdvancedNullAwayCodeFix.fix
+Fixing error: Type='PASS_NULLABLE', message='passing @Nullable parameter 'Modifier.isStatic(field.getModifiers()) ? null : target' where @NonNull is required'
+/home/nima/Developer/nullness-benchmarks/mockito/src/main/java/org/mockito/internal/util/reflection/InstrumentationMemberAccessor.java:196
+    assureArguments(
+12:19:27.149 TRACE edu.ucr.cs.riple.core.checkers.nullaway.codefix.AdvancedNullAwayCodeFix.resolveRemainingErrors
+Resolving remaining cast to nonnull
+12:19:27.151 TRACE edu.ucr.cs.riple.core.checkers.nullaway.codefix.ChatGPT.ask
+Asking ChatGPT:
+in the method below, the expression Modifier.isStatic(field.getModifiers()) ? null : target is not nullable at the point it is used.
+
+```java
+@Override
+  public Object get(Field field, Object target) {
+    assureArguments(
+        field,
+        Modifier.isStatic(field.getModifiers()) ? null : target,
+        field.getDeclaringClass(),
+        new Object[0],
+        new Class<?>[0]);
+    try {
+      Object module = getModule.bindTo(field.getDeclaringClass()).invokeWithArguments();
+      String packageName = field.getDeclaringClass().getPackage().getName();
+      assureOpen(module, packageName);
+      MethodHandle handle =
+          ((MethodHandles.Lookup)
+                  privateLookupIn.invokeExact(field.getDeclaringClass(), DISPATCHER.getLookup()))
+              .unreflectGetter(field);
+      if (!Modifier.isStatic(field.getModifiers())) {
+        handle = handle.bindTo(target);
+      }
+      return handle.invokeWithArguments();
+    } catch (Throwable t) {
+      throw new IllegalStateException("Could not read " + field + " on " + target, t);
+    }
+}
+```
+At the line "    assureArguments(", at the occurrence of: "Modifier.isStatic(field.getModifiers()) ? null : target" should be replaced with `Nullability.castToNonnull(Modifier.isStatic(field.getModifiers()) ? null : target)`
+see the example below, for expression `foo.getBar()`, to wrap it with `Nullability.castToNonnull(foo.getBar())`.
+
+```java
+public t(){
+    String l = foo.getBar();
+}
+```
+
+will be:
+```java
+public t(){
+    String l = Nullability.castToNonnull(foo.getBar());
+}
+```
+
+### Instructions:
+
+Do not import any additional classes.
+
+Do not add Java comments.
+
+Only modify relevant lines as required.
+
+Return only the modified method wrapped in the XML format shown below.
+
+Place the Java code inside the <code> tag using a CDATA block with ```java formatting.
+
+Just give me the fixed code snippet in XML format in <response> tag like the example below. I will apply the fix to my codebase. Do not import any additional libraries or classes or add java comments. If you can provide the fixed code snippet, please provide it in the following format and place the code snippet in the <code> tag within ```java block.
+<response>
+  <success>true</success>
+  <code><![CDATA[
+  ```java
+  Your fixed code snippet here
+  ```
+    ]]>
+  </code>
+</response>
+
+12:19:27.151 TRACE edu.ucr.cs.riple.core.checkers.nullaway.codefix.ChatGPT.ask
+Retrieving response from cache
+12:19:27.151 TRACE edu.ucr.cs.riple.core.checkers.nullaway.codefix.Response.tryCreate
+Trying to create Response:
+<response>
+  <success>true</success>
+  <code><![CDATA[
+  ```java
+  @Override
+  public Object get(Field field, Object target) {
+    assureArguments(
+        field,
+        Nullability.castToNonnull(Modifier.isStatic(field.getModifiers()) ? null : target),
+        field.getDeclaringClass(),
+        new Object[0],
+        new Class<?>[0]);
+    try {
+      Object module = getModule.bindTo(field.getDeclaringClass()).invokeWithArguments();
+      String packageName = field.getDeclaringClass().getPackage().getName();
+      assureOpen(module, packageName);
+      MethodHandle handle =
+          ((MethodHandles.Lookup)
+                  privateLookupIn.invokeExact(field.getDeclaringClass(), DISPATCHER.getLookup()))
+              .unreflectGetter(field);
+      if (!Modifier.isStatic(field.getModifiers())) {
+        handle = handle.bindTo(target);
+      }
+      return handle.invokeWithArguments();
+    } catch (Throwable t) {
+      throw new IllegalStateException("Could not read " + field + " on " + target, t);
+    }
+  }
+  ```
+    ]]>
+  </code>
+</response>
+12:19:27.152 TRACE edu.ucr.cs.riple.core.checkers.nullaway.codefix.Response.<init>
+Creating Response:
+<response>
+  <success>true</success>
+  <code><![CDATA[
+  ```java
+  @Override
+  public Object get(Field field, Object target) {
+    assureArguments(
+        field,
+        Nullability.castToNonnull(Modifier.isStatic(field.getModifiers()) ? null : target),
+        field.getDeclaringClass(),
+        new Object[0],
+        new Class<?>[0]);
+    try {
+      Object module = getModule.bindTo(field.getDeclaringClass()).invokeWithArguments();
+      String packageName = field.getDeclaringClass().getPackage().getName();
+      assureOpen(module, packageName);
+      MethodHandle handle =
+          ((MethodHandles.Lookup)
+                  privateLookupIn.invokeExact(field.getDeclaringClass(), DISPATCHER.getLookup()))
+              .unreflectGetter(field);
+      if (!Modifier.isStatic(field.getModifiers())) {
+        handle = handle.bindTo(target);
+      }
+      return handle.invokeWithArguments();
+    } catch (Throwable t) {
+      throw new IllegalStateException("Could not read " + field + " on " + target, t);
+    }
+  }
+  ```
+    ]]>
+  </code>
+</response>
+12:19:27.153 TRACE edu.ucr.cs.riple.core.checkers.nullaway.codefix.Response.<init>
+Response created:
+@Override
+  public Object get(Field field, Object target) {
+    assureArguments(
+        field,
+        Nullability.castToNonnull(Modifier.isStatic(field.getModifiers()) ? null : target),
+        field.getDeclaringClass(),
+        new Object[0],
+        new Class<?>[0]);
+    try {
+      Object module = getModule.bindTo(field.getDeclaringClass()).invokeWithArguments();
+      String packageName = field.getDeclaringClass().getPackage().getName();
+      assureOpen(module, packageName);
+      MethodHandle handle =
+          ((MethodHandles.Lookup)
+                  privateLookupIn.invokeExact(field.getDeclaringClass(), DISPATCHER.getLookup()))
+              .unreflectGetter(field);
+      if (!Modifier.isStatic(field.getModifiers())) {
+        handle = handle.bindTo(target);
+      }
+      return handle.invokeWithArguments();
+    } catch (Throwable t) {
+      throw new IllegalStateException("Could not read " + field + " on " + target, t);
+    }
+  }
+12:19:27.153 TRACE edu.ucr.cs.riple.core.checkers.nullaway.codefix.ChatGPT.fixDereferenceByRemainingCastToNonnull
+Fixing the error by adding castToNonnull
