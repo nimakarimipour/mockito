@@ -1,0 +1,35 @@
+====================
+Type='WRONG_OVERRIDE_RETURN', message='method returns @Nullable, but superclass method org.mockito.internal.verification.api.VerificationDataInOrder.getWanted() returns @NonNull'
+/home/nima/Developer/nullness-benchmarks/mockito/src/main/java/org/mockito/internal/verification/api/VerificationDataInOrderImpl.java:35
+  @Nullable
+Log:
+12:16:16.035 TRACE edu.ucr.cs.riple.core.checkers.nullaway.NullAway.lambda$resolveRemainingErrors$19
+==============================
+12:16:16.036 TRACE edu.ucr.cs.riple.core.checkers.nullaway.NullAway.lambda$resolveRemainingErrors$19
+CHATGPT.COUNT = 2
+12:16:16.036 TRACE edu.ucr.cs.riple.core.checkers.nullaway.NullAway.lambda$resolveRemainingErrors$19
+CHATGPT.PROMPTS SIZE = 2
+12:16:16.036 TRACE edu.ucr.cs.riple.core.checkers.nullaway.NullAway.lambda$resolveRemainingErrors$19
+Both set to 0 and cleared 0
+12:16:16.036 TRACE edu.ucr.cs.riple.core.checkers.nullaway.NullAway.lambda$resolveRemainingErrors$19
+3 : TOP LEVEL CALL TO FIX ERROR: Type='WRONG_OVERRIDE_RETURN', message='method returns @Nullable, but superclass method org.mockito.internal.verification.api.VerificationDataInOrder.getWanted() returns @NonNull'
+/home/nima/Developer/nullness-benchmarks/mockito/src/main/java/org/mockito/internal/verification/api/VerificationDataInOrderImpl.java:35
+  @Nullable
+12:16:18.610 TRACE edu.ucr.cs.riple.core.checkers.nullaway.codefix.AdvancedNullAwayCodeFix.fix
+Fixing error: Type='WRONG_OVERRIDE_RETURN', message='method returns @Nullable, but superclass method org.mockito.internal.verification.api.VerificationDataInOrder.getWanted() returns @NonNull'
+/home/nima/Developer/nullness-benchmarks/mockito/src/main/java/org/mockito/internal/verification/api/VerificationDataInOrderImpl.java:35
+  @Nullable
+12:16:18.611 TRACE edu.ucr.cs.riple.core.checkers.nullaway.codefix.AdvancedNullAwayCodeFix.resolveWrongOverrideReturnError
+Fixing wrong override return error.
+12:16:18.611 TRACE edu.ucr.cs.riple.core.checkers.nullaway.codefix.AdvancedNullAwayCodeFix.resolveWrongOverrideReturnError
+Making the super method nullable.
+12:16:18.611 TRACE edu.ucr.cs.riple.core.checkers.nullaway.codefix.AdvancedNullAwayCodeFix.resolveWrongOverrideReturnError
+Resolving triggered errors for making super method nullable.
+12:16:18.611 TRACE edu.ucr.cs.riple.core.checkers.nullaway.codefix.AdvancedNullAwayCodeFix.fixTriggeredErrorsForLocation
+Fixing triggered errors for location: OnMethod{method='getWanted()', clazz='org.mockito.internal.verification.api.VerificationDataInOrderImpl'}
+12:16:18.614 TRACE edu.ucr.cs.riple.core.checkers.nullaway.codefix.AdvancedNullAwayCodeFix.getTriggeredErrorsFromLocation
+Impact not found, re-evaluating the location.
+12:16:21.174 TRACE edu.ucr.cs.riple.core.checkers.nullaway.codefix.AdvancedNullAwayCodeFix.fixTriggeredErrorsForLocation
+Triggered errors size: 0
+12:16:21.175 TRACE edu.ucr.cs.riple.core.checkers.nullaway.codefix.AdvancedNullAwayCodeFix.fixTriggeredErrorsForLocation
+Adding annotations for resolvable errors, size: 0
