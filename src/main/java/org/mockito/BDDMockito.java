@@ -170,7 +170,7 @@ public class BDDMockito extends Mockito {
 
     private final OngoingStubbing<T> mockitoOngoingStubbing;
 
-    public BDDOngoingStubbingImpl(@Nullable @NonNull OngoingStubbing<T> ongoingStubbing) {
+    public BDDOngoingStubbingImpl(@Nullable OngoingStubbing<T> ongoingStubbing) {
       this.mockitoOngoingStubbing = ongoingStubbing;
     }
 
