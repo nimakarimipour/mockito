@@ -251,11 +251,17 @@ public class MockitoCore {
    * @return last invocation
    */
   public Invocation getLastInvocation() {
-    OngoingStubbingImpl ongoingStubbing =
-        ((OngoingStubbingImpl) mockingProgress().pullOngoingStubbing());
-    List<Invocation> allInvocations = ongoingStubbing.getRegisteredInvocations();
-    return allInvocations.get(allInvocations.size() - 1);
-  }
+      OngoingStubbingImpl ongoingStubbing =
+          ((OngoingStubbingImpl) mockingProgress().pullOngoingStubbing());
+      if (ongoingStubbing == null) {
+        throw new IllegalStateException("No ongoing stubbing found");
+      }
+      List<Invocation> allInvocations = ongoingStubbing.getRegisteredInvocations();
+      if (allInvocations.isEmpty()) {
+        throw new IllegalStateException("No invocations found");
+      }
+      return allInvocations.get(allInvocations.size() - 1);
+    }
 
   public Object[] ignoreStubs(Object... mocks) {
     for (Object m : mocks) {
