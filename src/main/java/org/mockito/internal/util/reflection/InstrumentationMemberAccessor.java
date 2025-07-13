@@ -20,6 +20,7 @@ import net.bytebuddy.dynamic.loading.ClassLoadingStrategy;
 import net.bytebuddy.implementation.MethodCall;
 import org.mockito.exceptions.base.MockitoInitializationException;
 import org.mockito.plugins.MemberAccessor;
+import edu.ucr.cs.riple.annotator.util.Nullability;
 
 class InstrumentationMemberAccessor implements MemberAccessor {
 
@@ -217,53 +218,51 @@ class InstrumentationMemberAccessor implements MemberAccessor {
   }
 
   @Override
-  public void set(Field field, Object target, Object value) throws IllegalAccessException {
-    assureArguments(
-        field,
-        Modifier.isStatic(field.getModifiers()) ? null : target,
-        field.getDeclaringClass(),
-        new Object[] {value},
-        new Class<?>[] {field.getType()});
-    boolean illegalAccess = false;
-    try {
-      Object module = getModule.bindTo(field.getDeclaringClass()).invokeWithArguments();
-      String packageName = field.getDeclaringClass().getPackage().getName();
-      assureOpen(module, packageName);
-      // Method handles do not allow setting final fields where setAccessible(true)
-      // is required before unreflecting.
-      boolean isFinal;
-      if (Modifier.isFinal(field.getModifiers())) {
-        isFinal = true;
-        try {
-          DISPATCHER.setAccessible(field, true);
-        } catch (Throwable ignored) {
-          illegalAccess = true; // To distinguish from propagated illegal access exception.
-          throw new IllegalAccessException("Could not make final field " + field + " accessible");
-        }
-      } else {
-        isFinal = false;
-      }
+    public void set(Field field, Object target, Object value) throws IllegalAccessException {
+      assureArguments(
+          field,
+          Nullability.castToNonnull(Modifier.isStatic(field.getModifiers()) ? null : target),
+          field.getDeclaringClass(),
+          new Object[] {value},
+          new Class<?>[] {field.getType()});
+      boolean illegalAccess = false;
       try {
-        MethodHandle handle =
-            ((MethodHandles.Lookup)
-                    privateLookupIn.invokeExact(field.getDeclaringClass(), DISPATCHER.getLookup()))
-                .unreflectSetter(field);
-        if (!Modifier.isStatic(field.getModifiers())) {
-          handle = handle.bindTo(target);
+        Object module = getModule.bindTo(field.getDeclaringClass()).invokeWithArguments();
+        String packageName = field.getDeclaringClass().getPackage().getName();
+        assureOpen(module, packageName);
+        boolean isFinal;
+        if (Modifier.isFinal(field.getModifiers())) {
+          isFinal = true;
+          try {
+            DISPATCHER.setAccessible(field, true);
+          } catch (Throwable ignored) {
+            illegalAccess = true;
+            throw new IllegalAccessException("Could not make final field " + field + " accessible");
+          }
+        } else {
+          isFinal = false;
         }
-        handle.invokeWithArguments(value);
-      } finally {
-        if (isFinal) {
-          DISPATCHER.setAccessible(field, false);
+        try {
+          MethodHandle handle =
+              ((MethodHandles.Lookup)
+                      privateLookupIn.invokeExact(field.getDeclaringClass(), DISPATCHER.getLookup()))
+                  .unreflectSetter(field);
+          if (!Modifier.isStatic(field.getModifiers())) {
+            handle = handle.bindTo(target);
+          }
+          handle.invokeWithArguments(value);
+        } finally {
+          if (isFinal) {
+            DISPATCHER.setAccessible(field, false);
+          }
+        }
+      } catch (Throwable t) {
+        if (illegalAccess) {
+          throw (IllegalAccessException) t;
+        } else {
+          throw new IllegalStateException("Could not read " + field + " on " + target, t);
         }
       }
-    } catch (Throwable t) {
-      if (illegalAccess) {
-        throw (IllegalAccessException) t;
-      } else {
-        throw new IllegalStateException("Could not read " + field + " on " + target, t);
-      }
-    }
   }
 
   private void assureOpen(Object module, String packageName) throws Throwable {
