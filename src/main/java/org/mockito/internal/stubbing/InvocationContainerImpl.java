@@ -89,20 +89,18 @@ public class InvocationContainerImpl implements InvocationContainer, Serializabl
   }
 
   public StubbedInvocationMatcher findAnswerFor(Invocation invocation) {
-    synchronized (stubbed) {
-      for (StubbedInvocationMatcher s : stubbed) {
-        if (s.matches(invocation)) {
-          s.markStubUsed(invocation);
-          // TODO we should mark stubbed at the point of stubbing, not at the point where
-          // the stub is being used
-          invocation.markStubbed(new StubInfoImpl(s));
-          return s;
+      synchronized (stubbed) {
+        for (StubbedInvocationMatcher s : stubbed) {
+          if (s.matches(invocation)) {
+            s.markStubUsed(invocation);
+            invocation.markStubbed(new StubInfoImpl(s));
+            return s;
+          }
         }
       }
+  
+      throw new IllegalStateException("No matching stubbed invocation found");
     }
-
-    return null;
-  }
 
   /** Sets the answers declared with 'doAnswer' style. */
   public void setAnswersForStubbing(List<Answer<?>> answers, @Nullable Strictness strictness) {
