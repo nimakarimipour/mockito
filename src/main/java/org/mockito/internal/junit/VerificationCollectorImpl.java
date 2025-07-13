@@ -15,6 +15,7 @@ import org.mockito.internal.verification.api.VerificationData;
 import org.mockito.junit.VerificationCollector;
 import org.mockito.verification.VerificationMode;
 import org.mockito.verification.VerificationStrategy;
+import edu.ucr.cs.riple.annotator.util.Nullability;
 
 /** Mockito implementation of VerificationCollector. */
 public class VerificationCollectorImpl implements VerificationCollector {
@@ -74,13 +75,13 @@ public class VerificationCollectorImpl implements VerificationCollector {
   }
 
   private void append(@Nullable String message) {
-    this.numberOfFailures++;
-    this.builder
-        .append('\n')
-        .append(this.numberOfFailures)
-        .append(". ")
-        .append(message.trim())
-        .append('\n');
+      this.numberOfFailures++;
+      this.builder
+          .append('\n')
+          .append(this.numberOfFailures)
+          .append(". ")
+          .append(Nullability.castToNonnull(message).trim())
+          .append('\n');
   }
 
   private class VerificationWrapper implements VerificationMode {
