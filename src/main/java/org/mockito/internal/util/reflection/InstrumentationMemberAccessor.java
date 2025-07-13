@@ -27,7 +27,7 @@ class InstrumentationMemberAccessor implements MemberAccessor {
   private static final Map<Class<?>, Class<?>> WRAPPERS = new HashMap<>();
 
   @Nullable private static final Instrumentation INSTRUMENTATION;
-  private static final Dispatcher DISPATCHER;
+  @Nullable private static final Dispatcher DISPATCHER;
 
   @Nullable private static final Throwable INITIALIZATION_ERROR;
 
@@ -123,161 +123,179 @@ class InstrumentationMemberAccessor implements MemberAccessor {
   }
 
   @Override
-    public Object newInstance(Constructor<?> constructor, Object... arguments)
-        throws InstantiationException, InvocationTargetException {
-      if (Modifier.isAbstract(constructor.getDeclaringClass().getModifiers())) {
-        throw new InstantiationException(
-            "Cannot instantiate abstract " + constructor.getDeclaringClass().getTypeName());
-      }
-      assureArguments(constructor, Nullability.castToNonnull(null), Nullability.castToNonnull(null), arguments, constructor.getParameterTypes());
-      try {
-        Object module = getModule.bindTo(constructor.getDeclaringClass()).invokeWithArguments();
-        String packageName = constructor.getDeclaringClass().getPackage().getName();
-        assureOpen(module, packageName);
-        MethodHandle handle =
-            ((MethodHandles.Lookup)
-                    privateLookupIn.invokeExact(
-                        constructor.getDeclaringClass(), DISPATCHER.getLookup()))
-                .unreflectConstructor(constructor);
-        try {
-          return handle.invokeWithArguments(arguments);
-        } catch (Throwable t) {
-          throw new InvocationTargetException(t);
-        }
-      } catch (InvocationTargetException e) {
-        throw e;
-      } catch (Throwable t) {
-        throw new IllegalStateException(
-            "Could not construct " + constructor + " with arguments " + Arrays.toString(arguments),
-            t);
-      }
-  }
-
-  @Override
-    public Object invoke(Method method,  @Nullable Object target, Object... arguments)
-        throws InvocationTargetException {
-      assureArguments(
-          method,
-          Nullability.castToNonnull(Modifier.isStatic(method.getModifiers()) ? null : target),
-          method.getDeclaringClass(),
-          arguments,
-          method.getParameterTypes());
-      try {
-        Object module = getModule.bindTo(method.getDeclaringClass()).invokeWithArguments();
-        String packageName = method.getDeclaringClass().getPackage().getName();
-        assureOpen(module, packageName);
-        MethodHandle handle =
-            ((MethodHandles.Lookup)
-                    privateLookupIn.invokeExact(method.getDeclaringClass(), DISPATCHER.getLookup()))
-                .unreflect(method);
-        if (!Modifier.isStatic(method.getModifiers())) {
-          handle = handle.bindTo(target);
-        }
-        try {
-          return handle.invokeWithArguments(arguments);
-        } catch (Throwable t) {
-          throw new InvocationTargetException(t);
-        }
-      } catch (InvocationTargetException e) {
-        throw e;
-      } catch (Throwable t) {
-        throw new IllegalStateException(
-            "Could not invoke "
-                + method
-                + " on "
-                + target
-                + " with arguments "
-                + Arrays.toString(arguments),
-            t);
-      }
-  }
-
-  @Override
-    public Object get(Field field, Object target) {
-      assureArguments(
-          field,
-          Nullability.castToNonnull(Modifier.isStatic(field.getModifiers()) ? null : target),
-          field.getDeclaringClass(),
-          new Object[0],
-          new Class<?>[0]);
-      try {
-        Object module = getModule.bindTo(field.getDeclaringClass()).invokeWithArguments();
-        String packageName = field.getDeclaringClass().getPackage().getName();
-        assureOpen(module, packageName);
-        MethodHandle handle =
-            ((MethodHandles.Lookup)
-                    privateLookupIn.invokeExact(field.getDeclaringClass(), DISPATCHER.getLookup()))
-                .unreflectGetter(field);
-        if (!Modifier.isStatic(field.getModifiers())) {
-          handle = handle.bindTo(target);
-        }
-        return handle.invokeWithArguments();
-      } catch (Throwable t) {
-        throw new IllegalStateException("Could not read " + field + " on " + target, t);
-      }
+        public Object newInstance(Constructor<?> constructor, Object... arguments)
+            throws InstantiationException, InvocationTargetException {
+          if (Modifier.isAbstract(constructor.getDeclaringClass().getModifiers())) {
+            throw new InstantiationException(
+                "Cannot instantiate abstract " + constructor.getDeclaringClass().getTypeName());
+          }
+          assureArguments(constructor, Nullability.castToNonnull(null), Nullability.castToNonnull(null), arguments, constructor.getParameterTypes());
+          try {
+            Object module = getModule.bindTo(constructor.getDeclaringClass()).invokeWithArguments();
+            String packageName = constructor.getDeclaringClass().getPackage().getName();
+            assureOpen(module, packageName);
+            
+            if (DISPATCHER == null) {
+              throw new IllegalStateException("DISPATCHER is not initialized");
+            }
+            
+            MethodHandle handle =
+                ((MethodHandles.Lookup)
+                        privateLookupIn.invokeExact(
+                            constructor.getDeclaringClass(), Nullability.castToNonnull(DISPATCHER.getLookup(), "checked before use")))
+                    .unreflectConstructor(constructor);
+            try {
+              return handle.invokeWithArguments(arguments);
+            } catch (Throwable t) {
+              throw new InvocationTargetException(t);
+            }
+          } catch (InvocationTargetException e) {
+            throw e;
+          } catch (Throwable t) {
+            throw new IllegalStateException(
+                "Could not construct " + constructor + " with arguments " + Arrays.toString(arguments),
+                t);
+          }
     }
 
   @Override
-    public void set(Field field, Object target, Object value) throws IllegalAccessException {
-      assureArguments(
-          field,
-          Nullability.castToNonnull(Modifier.isStatic(field.getModifiers()) ? null : target),
-          field.getDeclaringClass(),
-          new Object[] {value},
-          new Class<?>[] {field.getType()});
-      boolean illegalAccess = false;
-      try {
-        Object module = getModule.bindTo(field.getDeclaringClass()).invokeWithArguments();
-        String packageName = field.getDeclaringClass().getPackage().getName();
-        assureOpen(module, packageName);
-        boolean isFinal;
-        if (Modifier.isFinal(field.getModifiers())) {
-          isFinal = true;
-          try {
-            DISPATCHER.setAccessible(field, true);
-          } catch (Throwable ignored) {
-            illegalAccess = true;
-            throw new IllegalAccessException("Could not make final field " + field + " accessible");
-          }
-        } else {
-          isFinal = false;
-        }
+      public Object invoke(Method method,  @Nullable Object target, Object... arguments)
+          throws InvocationTargetException {
+        assureArguments(
+            method,
+            Nullability.castToNonnull(Modifier.isStatic(method.getModifiers()) ? null : target),
+            method.getDeclaringClass(),
+            arguments,
+            method.getParameterTypes());
         try {
+          Object module = getModule.bindTo(method.getDeclaringClass()).invokeWithArguments();
+          String packageName = method.getDeclaringClass().getPackage().getName();
+          assureOpen(module, packageName);
+          MethodHandles.Lookup lookup = DISPATCHER != null ? DISPATCHER.getLookup() : null;
+          if (lookup == null) {
+            throw new IllegalStateException("DISPATCHER is not initialized properly.");
+          }
           MethodHandle handle =
               ((MethodHandles.Lookup)
-                      privateLookupIn.invokeExact(field.getDeclaringClass(), DISPATCHER.getLookup()))
-                  .unreflectSetter(field);
+                      privateLookupIn.invokeExact(method.getDeclaringClass(), Nullability.castToNonnull(DISPATCHER, "only proceed if exists").getLookup()))
+                  .unreflect(method);
+          if (!Modifier.isStatic(method.getModifiers())) {
+            handle = handle.bindTo(target);
+          }
+          try {
+            return handle.invokeWithArguments(arguments);
+          } catch (Throwable t) {
+            throw new InvocationTargetException(t);
+          }
+        } catch (InvocationTargetException e) {
+          throw e;
+        } catch (Throwable t) {
+          throw new IllegalStateException(
+              "Could not invoke "
+                  + method
+                  + " on "
+                  + target
+                  + " with arguments "
+                  + Arrays.toString(arguments),
+              t);
+        }
+  }
+
+  @Override
+      public Object get(Field field, Object target) {
+        assureArguments(
+            field,
+            Nullability.castToNonnull(Modifier.isStatic(field.getModifiers()) ? null : target),
+            field.getDeclaringClass(),
+            new Object[0],
+            new Class<?>[0]);
+        try {
+          Object module = getModule.bindTo(field.getDeclaringClass()).invokeWithArguments();
+          String packageName = field.getDeclaringClass().getPackage().getName();
+          assureOpen(module, packageName);
+    
+          if (DISPATCHER == null) {
+            throw new IllegalStateException("DISPATCHER is not initialized");
+          }
+    
+          MethodHandle handle =
+              ((MethodHandles.Lookup)
+                      privateLookupIn.invokeExact(field.getDeclaringClass(), 
+                              Nullability.castToNonnull(DISPATCHER.getLookup(), "checked before use")))
+                  .unreflectGetter(field);
           if (!Modifier.isStatic(field.getModifiers())) {
             handle = handle.bindTo(target);
           }
-          handle.invokeWithArguments(value);
-        } finally {
-          if (isFinal) {
-            DISPATCHER.setAccessible(field, false);
-          }
-        }
-      } catch (Throwable t) {
-        if (illegalAccess) {
-          throw (IllegalAccessException) t;
-        } else {
+          return handle.invokeWithArguments();
+        } catch (Throwable t) {
           throw new IllegalStateException("Could not read " + field + " on " + target, t);
         }
+  }
+
+  @Override
+  public void set(Field field, Object target, Object value) throws IllegalAccessException {
+    assureArguments(
+        field,
+        Nullability.castToNonnull(Modifier.isStatic(field.getModifiers()) ? null : target),
+        field.getDeclaringClass(),
+        new Object[] {value},
+        new Class<?>[] {field.getType()});
+    boolean illegalAccess = false;
+    if (DISPATCHER == null) {
+      throw new IllegalAccessException("DISPATCHER is null, cannot make field accessible");
+    }
+    try {
+      Object module = getModule.bindTo(field.getDeclaringClass()).invokeWithArguments();
+      String packageName = field.getDeclaringClass().getPackage().getName();
+      assureOpen(module, packageName);
+      boolean isFinal;
+      if (Modifier.isFinal(field.getModifiers())) {
+        isFinal = true;
+        try {
+          Nullability.castToNonnull(DISPATCHER, "checked for null").setAccessible(field, true);
+        } catch (Throwable ignored) {
+          illegalAccess = true;
+          throw new IllegalAccessException("Could not make final field " + field + " accessible");
+        }
+      } else {
+        isFinal = false;
       }
+      try {
+        MethodHandle handle =
+            ((MethodHandles.Lookup)
+                    privateLookupIn.invokeExact(field.getDeclaringClass(), Nullability.castToNonnull(DISPATCHER, "not nullable when used").getLookup()))
+                .unreflectSetter(field);
+        if (!Modifier.isStatic(field.getModifiers())) {
+          handle = handle.bindTo(target);
+        }
+        handle.invokeWithArguments(value);
+      } finally {
+        if (isFinal) {
+          Nullability.castToNonnull(DISPATCHER, "not null if field final").setAccessible(field, false);
+        }
+      }
+    } catch (Throwable t) {
+      if (illegalAccess) {
+        throw (IllegalAccessException) t;
+      } else {
+        throw new IllegalStateException("Could not read " + field + " on " + target, t);
+      }
+    }
   }
 
   private void assureOpen(Object module, String packageName) throws Throwable {
-    if (!(Boolean) isOpen.invokeWithArguments(module, packageName, DISPATCHER.getModule())) {
-      redefineModule
-          .bindTo(INSTRUMENTATION)
-          .invokeWithArguments(
-              module,
-              Collections.emptySet(),
-              Collections.emptyMap(),
-              Collections.singletonMap(packageName, Collections.singleton(DISPATCHER.getModule())),
-              Collections.emptySet(),
-              Collections.emptyMap());
+        if (DISPATCHER != null && !(Boolean) isOpen.invokeWithArguments(module, packageName, DISPATCHER.getModule())) {
+          redefineModule
+              .bindTo(INSTRUMENTATION)
+              .invokeWithArguments(
+                  module,
+                  Collections.emptySet(),
+                  Collections.emptyMap(),
+                  Collections.singletonMap(packageName, Collections.singleton(DISPATCHER.getModule())),
+                  Collections.emptySet(),
+                  Collections.emptyMap());
+        }
     }
-  }
 
   private static void assureArguments(
       AccessibleObject target, Object owner, Class<?> type, Object[] values, Class<?>[] types) {
