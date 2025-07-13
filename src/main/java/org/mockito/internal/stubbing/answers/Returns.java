@@ -55,8 +55,11 @@ public class Returns implements Answer<Object>, ValidableAnswer, Serializable {
     }
 
   private Class<?> returnType() {
-    return value.getClass();
-  }
+      if (value == null) {
+        throw new IllegalStateException("Value is null");
+      }
+      return value.getClass();
+    }
 
   private boolean returnsNull() {
     return value == null;
