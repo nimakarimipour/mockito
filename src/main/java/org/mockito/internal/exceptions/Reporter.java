@@ -464,6 +464,9 @@ public class Reporter {
 
   public static MockitoAssertionError noMoreInteractionsWanted(
       @Nullable Invocation undesired, List<VerificationAwareInvocation> invocations) {
+    if (undesired == null || undesired.getMock() == null) {
+      throw new NullPointerException("The 'undesired' invocation or its mock is null");
+    }
     ScenarioPrinter scenarioPrinter = new ScenarioPrinter();
     String scenario = scenarioPrinter.print(invocations);
 
