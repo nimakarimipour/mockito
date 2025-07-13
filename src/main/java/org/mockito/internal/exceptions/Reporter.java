@@ -463,20 +463,23 @@ public class Reporter {
   }
 
   public static MockitoAssertionError noMoreInteractionsWanted(
-      @Nullable Invocation undesired, List<VerificationAwareInvocation> invocations) {
-    ScenarioPrinter scenarioPrinter = new ScenarioPrinter();
-    String scenario = scenarioPrinter.print(invocations);
-
-    return new NoInteractionsWanted(
-        join(
-            "No interactions wanted here:",
-            new LocationImpl(),
-            "But found this interaction on mock '"
-                + MockUtil.getMockName(undesired.getMock())
-                + "':",
-            undesired.getLocation(),
-            scenario));
-  }
+         @Nullable Invocation undesired, List<VerificationAwareInvocation> invocations) {
+      if (undesired == null || undesired.getMock() == null) {
+          throw new NullPointerException("The 'undesired' invocation or its mock is null");
+      }
+      ScenarioPrinter scenarioPrinter = new ScenarioPrinter();
+      String scenario = scenarioPrinter.print(invocations);
+  
+      return new NoInteractionsWanted(
+          join(
+              "No interactions wanted here:",
+              new LocationImpl(),
+              "But found this interaction on mock '"
+                  + MockUtil.getMockName(undesired.getMock())
+                  + "':",
+              undesired.getLocation(),
+              scenario));
+    }
 
   public static MockitoAssertionError noMoreInteractionsWantedInOrder(Invocation undesired) {
     return new VerificationInOrderFailure(
