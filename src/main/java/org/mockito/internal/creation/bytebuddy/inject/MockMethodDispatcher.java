@@ -39,10 +39,10 @@ public abstract class MockMethodDispatcher {
     DISPATCHERS.putIfAbsent(identifier, dispatcher);
   }
 
-  @SuppressWarnings("unused")
   public static boolean isConstructorMock(String identifier, Class<?> type) {
-    return DISPATCHERS.get(identifier).isConstructorMock(type);
-  }
+      MockMethodDispatcher dispatcher = DISPATCHERS.get(identifier);
+      return dispatcher != null && dispatcher.isConstructorMock(type);
+    }
 
   @Nullable
   @SuppressWarnings("unused")
