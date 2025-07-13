@@ -6,7 +6,6 @@ package org.mockito.internal.stubbing;
 
 import static org.mockito.internal.progress.ThreadSafeMockingProgress.mockingProgress;
 
-import edu.ucr.cs.riple.annotator.util.Nullability;
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.Collections;
@@ -36,7 +35,7 @@ public class InvocationContainerImpl implements InvocationContainer, Serializabl
   private final RegisteredInvocations registeredInvocations;
   @Nullable private final Strictness mockStrictness;
 
-  @Nullable private MatchableInvocation invocationForStubbing;
+  private MatchableInvocation invocationForStubbing;
 
   public InvocationContainerImpl(MockCreationSettings mockSettings) {
     this.registeredInvocations = createRegisteredInvocations(mockSettings);
@@ -65,9 +64,6 @@ public class InvocationContainerImpl implements InvocationContainer, Serializabl
   /** Adds new stubbed answer and returns the invocation matcher the answer was added to. */
   public StubbedInvocationMatcher addAnswer(
       Answer answer, boolean isConsecutive, @Nullable Strictness stubbingStrictness) {
-    if (this.invocationForStubbing == null) {
-      throw new NullPointerException("invocationForStubbing is null");
-    }
     Invocation invocation = invocationForStubbing.getInvocation();
     mockingProgress().stubbingCompleted();
     if (answer instanceof ValidableAnswer) {
@@ -159,15 +155,9 @@ public class InvocationContainerImpl implements InvocationContainer, Serializabl
   }
 
   public Object invokedMock() {
-    if (invocationForStubbing == null) {
-      throw new NullPointerException("invocationForStubbing is null");
-    }
-    return Nullability.castToNonnull(invocationForStubbing, "explicitly checked for null")
-        .getInvocation()
-        .getMock();
+    return invocationForStubbing.getInvocation().getMock();
   }
 
-  @Nullable
   public MatchableInvocation getInvocationForStubbing() {
     return invocationForStubbing;
   }
