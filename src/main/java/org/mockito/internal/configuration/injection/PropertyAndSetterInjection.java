@@ -9,7 +9,6 @@ import static org.mockito.internal.exceptions.Reporter.fieldInitialisationThrewE
 import static org.mockito.internal.util.collections.Sets.newMockSafeHashSet;
 import static org.mockito.internal.util.reflection.SuperTypesLastSorter.sortSuperTypesLast;
 
-import edu.ucr.cs.riple.annotator.util.Nullability;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Modifier;
@@ -75,6 +74,7 @@ public class PropertyAndSetterInjection extends MockInjectionStrategy {
     FieldInitializationReport report =
         initializeInjectMocksField(injectMocksField, injectMocksFieldOwner);
 
+    // for each field in the class hierarchy
     boolean injectionOccurred = false;
     Class<?> fieldClass = report.fieldClass();
     Object fieldInstanceNeedingInjection = report.fieldInstance();
@@ -82,7 +82,7 @@ public class PropertyAndSetterInjection extends MockInjectionStrategy {
       injectionOccurred |=
           injectMockCandidates(
               fieldClass, fieldInstanceNeedingInjection, newMockSafeHashSet(mockCandidates));
-      fieldClass = Nullability.castToNonnull(fieldClass.getSuperclass(), "not Object class");
+      fieldClass = fieldClass.getSuperclass();
     }
     return injectionOccurred;
   }
@@ -102,8 +102,7 @@ public class PropertyAndSetterInjection extends MockInjectionStrategy {
   private boolean injectMockCandidates(
       Class<?> awaitingInjectionClazz, Object injectee, Set<Object> mocks) {
     boolean injectionOccurred;
-    List<Field> orderedCandidateInjecteeFields =
-        orderedInstanceFieldsFrom(Nullability.castToNonnull(awaitingInjectionClazz));
+    List<Field> orderedCandidateInjecteeFields = orderedInstanceFieldsFrom(awaitingInjectionClazz);
     // pass 1
     injectionOccurred =
         injectMockCandidatesOnFields(mocks, injectee, false, orderedCandidateInjecteeFields);
