@@ -7,7 +7,6 @@ package org.mockito.internal.util.reflection;
 import static net.bytebuddy.matcher.ElementMatchers.named;
 import static org.mockito.internal.util.StringUtil.join;
 
-import edu.ucr.cs.riple.annotator.util.Nullability;
 import java.lang.instrument.Instrumentation;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -27,7 +26,7 @@ class InstrumentationMemberAccessor implements MemberAccessor {
   private static final Map<Class<?>, Class<?>> WRAPPERS = new HashMap<>();
 
   @Nullable private static final Instrumentation INSTRUMENTATION;
-  @Nullable private static final Dispatcher DISPATCHER;
+  private static final Dispatcher DISPATCHER;
 
   @Nullable private static final Throwable INITIALIZATION_ERROR;
 
@@ -134,17 +133,10 @@ class InstrumentationMemberAccessor implements MemberAccessor {
       Object module = getModule.bindTo(constructor.getDeclaringClass()).invokeWithArguments();
       String packageName = constructor.getDeclaringClass().getPackage().getName();
       assureOpen(module, packageName);
-
-      if (DISPATCHER == null || DISPATCHER.getLookup() == null) {
-        throw new IllegalStateException("Dispatcher or its lookup cannot be null");
-      }
-
       MethodHandle handle =
           ((MethodHandles.Lookup)
                   privateLookupIn.invokeExact(
-                      constructor.getDeclaringClass(),
-                      Nullability.castToNonnull(DISPATCHER, "explicitly checked nonnull")
-                          .getLookup()))
+                      constructor.getDeclaringClass(), DISPATCHER.getLookup()))
               .unreflectConstructor(constructor);
       try {
         return handle.invokeWithArguments(arguments);
@@ -169,20 +161,13 @@ class InstrumentationMemberAccessor implements MemberAccessor {
         method.getDeclaringClass(),
         arguments,
         method.getParameterTypes());
-
-    if (DISPATCHER == null) {
-      throw new IllegalStateException("DISPATCHER is not initialized.");
-    }
-
     try {
       Object module = getModule.bindTo(method.getDeclaringClass()).invokeWithArguments();
       String packageName = method.getDeclaringClass().getPackage().getName();
       assureOpen(module, packageName);
       MethodHandle handle =
           ((MethodHandles.Lookup)
-                  privateLookupIn.invokeExact(
-                      method.getDeclaringClass(),
-                      Nullability.castToNonnull(DISPATCHER.getLookup(), "checked for null")))
+                  privateLookupIn.invokeExact(method.getDeclaringClass(), DISPATCHER.getLookup()))
               .unreflect(method);
       if (!Modifier.isStatic(method.getModifiers())) {
         handle = handle.bindTo(target);
@@ -218,16 +203,9 @@ class InstrumentationMemberAccessor implements MemberAccessor {
       Object module = getModule.bindTo(field.getDeclaringClass()).invokeWithArguments();
       String packageName = field.getDeclaringClass().getPackage().getName();
       assureOpen(module, packageName);
-
-      if (DISPATCHER == null) {
-        throw new IllegalStateException("DISPATCHER is not initialized");
-      }
-
       MethodHandle handle =
           ((MethodHandles.Lookup)
-                  privateLookupIn.invokeExact(
-                      field.getDeclaringClass(),
-                      Nullability.castToNonnull(DISPATCHER, "checked before use").getLookup()))
+                  privateLookupIn.invokeExact(field.getDeclaringClass(), DISPATCHER.getLookup()))
               .unreflectGetter(field);
       if (!Modifier.isStatic(field.getModifiers())) {
         handle = handle.bindTo(target);
@@ -247,28 +225,28 @@ class InstrumentationMemberAccessor implements MemberAccessor {
         new Object[] {value},
         new Class<?>[] {field.getType()});
     boolean illegalAccess = false;
-    if (DISPATCHER == null) {
-      throw new IllegalStateException("DISPATCHER is not initialized");
-    }
     try {
       Object module = getModule.bindTo(field.getDeclaringClass()).invokeWithArguments();
       String packageName = field.getDeclaringClass().getPackage().getName();
       assureOpen(module, packageName);
-      boolean isFinal = Modifier.isFinal(field.getModifiers());
-      if (isFinal) {
+      // Method handles do not allow setting final fields where setAccessible(true)
+      // is required before unreflecting.
+      boolean isFinal;
+      if (Modifier.isFinal(field.getModifiers())) {
+        isFinal = true;
         try {
-          Nullability.castToNonnull(DISPATCHER, "checked for null previously")
-              .setAccessible(field, true);
+          DISPATCHER.setAccessible(field, true);
         } catch (Throwable ignored) {
-          illegalAccess = true;
+          illegalAccess = true; // To distinguish from propagated illegal access exception.
           throw new IllegalAccessException("Could not make final field " + field + " accessible");
         }
+      } else {
+        isFinal = false;
       }
       try {
-        MethodHandles.Lookup lookup =
-            Nullability.castToNonnull(DISPATCHER.getLookup(), "checked for null previously");
         MethodHandle handle =
-            ((MethodHandles.Lookup) privateLookupIn.invokeExact(field.getDeclaringClass(), lookup))
+            ((MethodHandles.Lookup)
+                    privateLookupIn.invokeExact(field.getDeclaringClass(), DISPATCHER.getLookup()))
                 .unreflectSetter(field);
         if (!Modifier.isStatic(field.getModifiers())) {
           handle = handle.bindTo(target);
@@ -276,8 +254,7 @@ class InstrumentationMemberAccessor implements MemberAccessor {
         handle.invokeWithArguments(value);
       } finally {
         if (isFinal) {
-          Nullability.castToNonnull(DISPATCHER, "checked for null previously")
-              .setAccessible(field, false);
+          DISPATCHER.setAccessible(field, false);
         }
       }
     } catch (Throwable t) {
@@ -290,8 +267,7 @@ class InstrumentationMemberAccessor implements MemberAccessor {
   }
 
   private void assureOpen(Object module, String packageName) throws Throwable {
-    if (DISPATCHER != null
-        && !(Boolean) isOpen.invokeWithArguments(module, packageName, DISPATCHER.getModule())) {
+    if (!(Boolean) isOpen.invokeWithArguments(module, packageName, DISPATCHER.getModule())) {
       redefineModule
           .bindTo(INSTRUMENTATION)
           .invokeWithArguments(
