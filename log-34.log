@@ -1,0 +1,132 @@
+====================
+Type='WRONG_OVERRIDE_RETURN', message='method returns @Nullable, but superclass method org.mockito.plugins.MockMaker.<T>createMock(org.mockito.mock.MockCreationSettings<T>,org.mockito.invocation.MockHandler) returns @NonNull'
+/home/nima/Developer/nullness-benchmarks/mockito/src/main/java/org/mockito/internal/creation/bytebuddy/InlineByteBuddyMockMaker.java:299
+  @Nullable
+Log:
+12:15:22.506 TRACE edu.ucr.cs.riple.core.checkers.nullaway.NullAway.lambda$resolveRemainingErrors$19
+==============================
+12:15:22.506 TRACE edu.ucr.cs.riple.core.checkers.nullaway.NullAway.lambda$resolveRemainingErrors$19
+CHATGPT.COUNT = 1
+12:15:22.506 TRACE edu.ucr.cs.riple.core.checkers.nullaway.NullAway.lambda$resolveRemainingErrors$19
+CHATGPT.PROMPTS SIZE = 1
+12:15:22.506 TRACE edu.ucr.cs.riple.core.checkers.nullaway.NullAway.lambda$resolveRemainingErrors$19
+Both set to 0 and cleared 0
+12:15:22.506 TRACE edu.ucr.cs.riple.core.checkers.nullaway.NullAway.lambda$resolveRemainingErrors$19
+34 : TOP LEVEL CALL TO FIX ERROR: Type='WRONG_OVERRIDE_RETURN', message='method returns @Nullable, but superclass method org.mockito.plugins.MockMaker.<T>createMock(org.mockito.mock.MockCreationSettings<T>,org.mockito.invocation.MockHandler) returns @NonNull'
+/home/nima/Developer/nullness-benchmarks/mockito/src/main/java/org/mockito/internal/creation/bytebuddy/InlineByteBuddyMockMaker.java:299
+  @Nullable
+12:15:25.105 TRACE edu.ucr.cs.riple.core.checkers.nullaway.codefix.ChatGPT.ask
+Asking ChatGPT:
+I want to resolve a warning reported by NullAway.
+The error is of the type of "WRONG_OVERRIDE_RETURN" and the full error message is: "method returns @Nullable, but superclass method org.mockito.plugins.MockMaker.<T>createMock(org.mockito.mock.MockCreationSettings<T>,org.mockito.invocation.MockHandler) returns @NonNull".
+The line with the error is: "  @Nullable".
+
+The error is within "the method: createMock(org.mockito.mock.MockCreationSettings,org.mockito.invocation.MockHandler)" and the code surrounding the error is:
+```java
+              if (interceptor != null) {
+                interceptor.accept(
+                    object,
+                    new InlineConstructionMockContext(
+                        arguments, object.getClass(), parameterTypeNames));
+              }
+            }
+          } finally {
+            isSuspended.set(false);
+          }
+          return null;
+        };
+
+    bytecodeGenerator =
+        new TypeCachingBytecodeGenerator(
+            new InlineBytecodeGenerator(
+                INSTRUMENTATION, mocks, mockedStatics, isMockConstruction, onConstruction),
+            true);
+  }
+
+  @Nullable
+  @Override
+  public <T> T createMock(MockCreationSettings<T> settings, MockHandler handler) {
+    return doCreateMock(settings, handler, false);
+  }
+
+  @Override
+  public <T> Optional<T> createSpy(
+      MockCreationSettings<T> settings, MockHandler handler, T object) {
+    if (object == null) {
+      throw new MockitoConfigurationException("Spy instance must not be null");
+    }
+    currentSpied.set(object);
+    try {
+      return Optional.ofNullable(doCreateMock(settings, handler, true));
+    } finally {
+      currentSpied.remove();
+    }
+  }
+
+```
+
+Give me the fixed code snippet (ONLY THE METHOD REWRITE OF "createMock(org.mockito.mock.MockCreationSettings,org.mockito.invocation.MockHandler)") in XML format in <response> tag like the example below. I will apply the fix to my codebase.
+Do not import any additional libraries or classes or java comments.
+If you can provide the fixed code snippet, provide it in the following format and place the code snippet in the <code> tag within ```java block.
+<response>
+  <success>true</success>
+  <code><![CDATA[
+  ```java
+  Your fixed code snippet here
+  ```
+    ]]>
+  </code>
+</response>
+
+12:15:25.105 TRACE edu.ucr.cs.riple.core.checkers.nullaway.codefix.ChatGPT.ask
+Retrieving response from cache
+12:15:25.105 TRACE edu.ucr.cs.riple.core.checkers.nullaway.codefix.Response.tryCreate
+Trying to create Response:
+```xml
+<response>
+  <success>true</success>
+  <code><![CDATA[
+  ```java
+  @Override
+  public <T> T createMock(MockCreationSettings<T> settings, MockHandler handler) {
+    T mockInstance = doCreateMock(settings, handler, false);
+    if (mockInstance == null) {
+      throw new NullPointerException("Mock instance cannot be null");
+    }
+    return mockInstance;
+  }
+  ```
+  ]]>
+  </code>
+</response>
+```
+12:15:25.106 TRACE edu.ucr.cs.riple.core.checkers.nullaway.codefix.Response.<init>
+Creating Response:
+```xml
+<response>
+  <success>true</success>
+  <code><![CDATA[
+  ```java
+  @Override
+  public <T> T createMock(MockCreationSettings<T> settings, MockHandler handler) {
+    T mockInstance = doCreateMock(settings, handler, false);
+    if (mockInstance == null) {
+      throw new NullPointerException("Mock instance cannot be null");
+    }
+    return mockInstance;
+  }
+  ```
+  ]]>
+  </code>
+</response>
+```
+12:15:25.107 TRACE edu.ucr.cs.riple.core.checkers.nullaway.codefix.Response.<init>
+Response created:
+@Override
+  public <T> T createMock(MockCreationSettings<T> settings, MockHandler handler) {
+    T mockInstance = doCreateMock(settings, handler, false);
+    if (mockInstance == null) {
+      throw new NullPointerException("Mock instance cannot be null");
+    }
+    return mockInstance;
+  }
