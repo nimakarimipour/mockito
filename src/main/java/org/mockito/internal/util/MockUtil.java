@@ -63,16 +63,21 @@ public class MockUtil {
   }
 
   public static <T> MockHandler<T> getMockHandler(T mock) {
-    if (mock == null) {
-      throw new NotAMockException("Argument should be a mock, but is null!");
+      if (mock == null) {
+        throw new NotAMockException("Argument should be a mock, but is null!");
+      }
+  
+      if (isMock(mock)) {
+        MockHandler<T> handler = mockMaker.getHandler(mock);
+        if (handler != null) {
+          return handler;
+        } else {
+          throw new NotAMockException("Handler should not be null for a mock instance: " + mock.getClass());
+        }
+      } else {
+        throw new NotAMockException("Argument should be a mock, but is: " + mock.getClass());
+      }
     }
-
-    if (isMock(mock)) {
-      return mockMaker.getHandler(mock);
-    } else {
-      throw new NotAMockException("Argument should be a mock, but is: " + mock.getClass());
-    }
-  }
 
   public static InvocationContainerImpl getInvocationContainer(Object mock) {
     return (InvocationContainerImpl) getMockHandler(mock).getInvocationContainer();
