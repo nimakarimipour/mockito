@@ -9,6 +9,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import javax.annotation.Nullable;
+import edu.ucr.cs.riple.annotator.util.Nullability;
 
 public abstract class MockMethodDispatcher {
 
@@ -40,9 +41,9 @@ public abstract class MockMethodDispatcher {
   }
 
   @SuppressWarnings("unused")
-  public static boolean isConstructorMock(String identifier, Class<?> type) {
-    return DISPATCHERS.get(identifier).isConstructorMock(type);
-  }
+    public static boolean isConstructorMock(String identifier, Class<?> type) {
+      return Nullability.castToNonnull(DISPATCHERS.get(identifier)).isConstructorMock(type);
+    }
 
   @Nullable
   @SuppressWarnings("unused")
