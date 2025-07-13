@@ -10,6 +10,7 @@ import static org.mockito.internal.util.MockUtil.*;
 import static org.mockito.internal.verification.VerificationModeFactory.noInteractions;
 import static org.mockito.internal.verification.VerificationModeFactory.noMoreInteractions;
 
+import edu.ucr.cs.riple.annotator.util.Nullability;
 import java.util.Arrays;
 import java.util.List;
 import java.util.function.Function;
@@ -253,7 +254,9 @@ public class MockitoCore {
   public Invocation getLastInvocation() {
     OngoingStubbingImpl ongoingStubbing =
         ((OngoingStubbingImpl) mockingProgress().pullOngoingStubbing());
-    List<Invocation> allInvocations = ongoingStubbing.getRegisteredInvocations();
+    List<Invocation> allInvocations =
+        Nullability.castToNonnull(ongoingStubbing, "null checks prevent null")
+            .getRegisteredInvocations();
     return allInvocations.get(allInvocations.size() - 1);
   }
 
