@@ -193,29 +193,29 @@ class InstrumentationMemberAccessor implements MemberAccessor {
   }
 
   @Override
-  public Object get(Field field, Object target) {
-    assureArguments(
-        field,
-        Modifier.isStatic(field.getModifiers()) ? null : target,
-        field.getDeclaringClass(),
-        new Object[0],
-        new Class<?>[0]);
-    try {
-      Object module = getModule.bindTo(field.getDeclaringClass()).invokeWithArguments();
-      String packageName = field.getDeclaringClass().getPackage().getName();
-      assureOpen(module, packageName);
-      MethodHandle handle =
-          ((MethodHandles.Lookup)
-                  privateLookupIn.invokeExact(field.getDeclaringClass(), DISPATCHER.getLookup()))
-              .unreflectGetter(field);
-      if (!Modifier.isStatic(field.getModifiers())) {
-        handle = handle.bindTo(target);
+    public Object get(Field field, Object target) {
+      assureArguments(
+          field,
+          Nullability.castToNonnull(Modifier.isStatic(field.getModifiers()) ? null : target),
+          field.getDeclaringClass(),
+          new Object[0],
+          new Class<?>[0]);
+      try {
+        Object module = getModule.bindTo(field.getDeclaringClass()).invokeWithArguments();
+        String packageName = field.getDeclaringClass().getPackage().getName();
+        assureOpen(module, packageName);
+        MethodHandle handle =
+            ((MethodHandles.Lookup)
+                    privateLookupIn.invokeExact(field.getDeclaringClass(), DISPATCHER.getLookup()))
+                .unreflectGetter(field);
+        if (!Modifier.isStatic(field.getModifiers())) {
+          handle = handle.bindTo(target);
+        }
+        return handle.invokeWithArguments();
+      } catch (Throwable t) {
+        throw new IllegalStateException("Could not read " + field + " on " + target, t);
       }
-      return handle.invokeWithArguments();
-    } catch (Throwable t) {
-      throw new IllegalStateException("Could not read " + field + " on " + target, t);
     }
-  }
 
   @Override
     public void set(Field field, Object target, Object value) throws IllegalAccessException {
