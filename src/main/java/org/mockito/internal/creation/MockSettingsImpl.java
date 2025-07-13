@@ -153,17 +153,19 @@ public class MockSettingsImpl<T> extends CreationSettings<T>
     return outerClassInstance;
   }
 
-  @Nullable
-  @Override
-  public Object[] getConstructorArgs() {
-    if (outerClassInstance == null) {
-      return constructorArgs;
+  @Nullable @Override
+    public Object[] getConstructorArgs() {
+      if (constructorArgs == null) {
+        return null;
+      }
+      if (outerClassInstance == null) {
+        return constructorArgs;
+      }
+      List<Object> resultArgs = new ArrayList<Object>(constructorArgs.length + 1);
+      resultArgs.add(outerClassInstance);
+      resultArgs.addAll(asList(constructorArgs));
+      return resultArgs.toArray(new Object[constructorArgs.length + 1]);
     }
-    List<Object> resultArgs = new ArrayList<Object>(constructorArgs.length + 1);
-    resultArgs.add(outerClassInstance);
-    resultArgs.addAll(asList(constructorArgs));
-    return resultArgs.toArray(new Object[constructorArgs.length + 1]);
-  }
 
   @Override
   public boolean isStubOnly() {
