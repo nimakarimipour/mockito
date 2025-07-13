@@ -40,6 +40,7 @@ import org.mockito.stubbing.LenientStubber;
 import org.mockito.stubbing.OngoingStubbing;
 import org.mockito.stubbing.Stubber;
 import org.mockito.verification.VerificationMode;
+import edu.ucr.cs.riple.annotator.util.Nullability;
 
 @SuppressWarnings("unchecked")
 public class MockitoCore {
@@ -251,11 +252,11 @@ public class MockitoCore {
    * @return last invocation
    */
   public Invocation getLastInvocation() {
-    OngoingStubbingImpl ongoingStubbing =
-        ((OngoingStubbingImpl) mockingProgress().pullOngoingStubbing());
-    List<Invocation> allInvocations = ongoingStubbing.getRegisteredInvocations();
-    return allInvocations.get(allInvocations.size() - 1);
-  }
+        OngoingStubbingImpl ongoingStubbing =
+            ((OngoingStubbingImpl) mockingProgress().pullOngoingStubbing());
+        List<Invocation> allInvocations = Nullability.castToNonnull(ongoingStubbing, "null checks prevent null").getRegisteredInvocations();
+        return allInvocations.get(allInvocations.size() - 1);
+    }
 
   public Object[] ignoreStubs(Object... mocks) {
     for (Object m : mocks) {
