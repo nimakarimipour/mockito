@@ -45,17 +45,16 @@ public abstract class MockMethodDispatcher {
   }
 
   @Nullable
+  @SuppressWarnings("unused")
   public static Object handleConstruction(
       String identifier,
       Class<?> type,
       Object object,
       Object[] arguments,
       String[] parameterTypeNames) {
-    MockMethodDispatcher dispatcher = DISPATCHERS.get(identifier);
-    if (dispatcher == null) {
-      throw new IllegalArgumentException("No dispatcher found for identifier: " + identifier);
-    }
-    return dispatcher.handleConstruction(type, object, arguments, parameterTypeNames);
+    return DISPATCHERS
+        .get(identifier)
+        .handleConstruction(type, object, arguments, parameterTypeNames);
   }
 
   @Nullable
