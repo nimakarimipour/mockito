@@ -271,6 +271,9 @@ public class InlineBytecodeGenerator implements BytecodeGenerator, ClassFileTran
     }
     Set<Object> modules = new HashSet<Object>();
     try {
+      if (getModule == null || canRead == null) {
+        return;
+      }
       Object target =
           getModule.invoke(
               Class.forName(
@@ -279,7 +282,9 @@ public class InlineBytecodeGenerator implements BytecodeGenerator, ClassFileTran
                   null));
       for (Class<?> type : types) {
         Object module = getModule.invoke(type);
-        if (!modules.contains(module) && !(Boolean) canRead.invoke(module, target)) {
+        if (module != null
+            && !modules.contains(module)
+            && !(Boolean) canRead.invoke(module, target)) {
           modules.add(module);
         }
       }
