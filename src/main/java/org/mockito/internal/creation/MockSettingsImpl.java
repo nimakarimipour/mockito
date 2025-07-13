@@ -157,18 +157,12 @@ public class MockSettingsImpl<T> extends CreationSettings<T>
   @Override
   public Object[] getConstructorArgs() {
     if (outerClassInstance == null) {
-      if (constructorArgs == null) {
-        return new Object[0];
-      }
       return constructorArgs;
     }
-    List<Object> resultArgs =
-        new ArrayList<Object>((constructorArgs == null ? 0 : constructorArgs.length) + 1);
+    List<Object> resultArgs = new ArrayList<Object>(constructorArgs.length + 1);
     resultArgs.add(outerClassInstance);
-    if (constructorArgs != null) {
-      resultArgs.addAll(asList(constructorArgs));
-    }
-    return resultArgs.toArray(new Object[resultArgs.size()]);
+    resultArgs.addAll(asList(constructorArgs));
+    return resultArgs.toArray(new Object[constructorArgs.length + 1]);
   }
 
   @Override
