@@ -72,6 +72,7 @@ public class DefaultMockingDetails implements MockingDetails {
     return toInspect;
   }
 
+  @SuppressWarnings("NullAway")
   private MockHandler<Object> mockHandler() {
     assertGoodMock();
     return MockUtil.getMockHandler(toInspect);
