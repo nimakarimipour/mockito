@@ -27,11 +27,15 @@ public class Primitives {
    * @return The primitive type if relevant, otherwise <code>null</code>
    */
   public static <T> Class<T> primitiveTypeOf(Class<T> clazz) {
-    if (clazz.isPrimitive()) {
-      return clazz;
+      if (clazz.isPrimitive()) {
+        return clazz;
+      }
+      Class<T> primitiveType = (Class<T>) PRIMITIVE_TYPES.get(clazz);
+      if (primitiveType != null) {
+        return primitiveType;
+      }
+      throw new IllegalArgumentException("No primitive type mapping found for: " + clazz.getName());
     }
-    return (Class<T>) PRIMITIVE_TYPES.get(clazz);
-  }
 
   /**
    * Indicates if the given class is primitive type or a primitive wrapper.
