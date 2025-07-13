@@ -154,42 +154,42 @@ class InstrumentationMemberAccessor implements MemberAccessor {
   }
 
   @Override
-  public Object invoke(Method method, @Nullable Object target, Object... arguments)
-      throws InvocationTargetException {
-    assureArguments(
-        method,
-        Modifier.isStatic(method.getModifiers()) ? null : target,
-        method.getDeclaringClass(),
-        arguments,
-        method.getParameterTypes());
-    try {
-      Object module = getModule.bindTo(method.getDeclaringClass()).invokeWithArguments();
-      String packageName = method.getDeclaringClass().getPackage().getName();
-      assureOpen(module, packageName);
-      MethodHandle handle =
-          ((MethodHandles.Lookup)
-                  privateLookupIn.invokeExact(method.getDeclaringClass(), DISPATCHER.getLookup()))
-              .unreflect(method);
-      if (!Modifier.isStatic(method.getModifiers())) {
-        handle = handle.bindTo(target);
-      }
+    public Object invoke(Method method,  @Nullable Object target, Object... arguments)
+        throws InvocationTargetException {
+      assureArguments(
+          method,
+          Nullability.castToNonnull(Modifier.isStatic(method.getModifiers()) ? null : target),
+          method.getDeclaringClass(),
+          arguments,
+          method.getParameterTypes());
       try {
-        return handle.invokeWithArguments(arguments);
+        Object module = getModule.bindTo(method.getDeclaringClass()).invokeWithArguments();
+        String packageName = method.getDeclaringClass().getPackage().getName();
+        assureOpen(module, packageName);
+        MethodHandle handle =
+            ((MethodHandles.Lookup)
+                    privateLookupIn.invokeExact(method.getDeclaringClass(), DISPATCHER.getLookup()))
+                .unreflect(method);
+        if (!Modifier.isStatic(method.getModifiers())) {
+          handle = handle.bindTo(target);
+        }
+        try {
+          return handle.invokeWithArguments(arguments);
+        } catch (Throwable t) {
+          throw new InvocationTargetException(t);
+        }
+      } catch (InvocationTargetException e) {
+        throw e;
       } catch (Throwable t) {
-        throw new InvocationTargetException(t);
+        throw new IllegalStateException(
+            "Could not invoke "
+                + method
+                + " on "
+                + target
+                + " with arguments "
+                + Arrays.toString(arguments),
+            t);
       }
-    } catch (InvocationTargetException e) {
-      throw e;
-    } catch (Throwable t) {
-      throw new IllegalStateException(
-          "Could not invoke "
-              + method
-              + " on "
-              + target
-              + " with arguments "
-              + Arrays.toString(arguments),
-          t);
-    }
   }
 
   @Override
