@@ -266,46 +266,53 @@ public class InlineBytecodeGenerator implements BytecodeGenerator, ClassFileTran
   }
 
   private void assureCanReadMockito(Set<Class<?>> types) {
-    if (redefineModule == null) {
-      return;
-    }
-    Set<Object> modules = new HashSet<Object>();
-    try {
-      Object target =
-          getModule.invoke(
-              Class.forName(
-                  "org.mockito.internal.creation.bytebuddy.inject.MockMethodDispatcher",
-                  false,
-                  null));
-      for (Class<?> type : types) {
-        Object module = getModule.invoke(type);
-        if (!modules.contains(module) && !(Boolean) canRead.invoke(module, target)) {
-          modules.add(module);
+      if (redefineModule == null) {
+        return;
+      }
+      Set<Object> modules = new HashSet<Object>();
+      try {
+        Object target =
+            getModule != null ? 
+            getModule.invoke(
+                Class.forName(
+                    "org.mockito.internal.creation.bytebuddy.inject.MockMethodDispatcher",
+                    false,
+                    null)) : null;
+        if (target == null) {
+          throw new NullPointerException("target is null");
         }
+        for (Class<?> type : types) {
+          Object module = getModule != null ? getModule.invoke(type) : null;
+          if (module == null) {
+            throw new NullPointerException("module is null for type: " + type);
+          }
+          if (!modules.contains(module) && !(Boolean) canRead.invoke(module, target)) {
+            modules.add(module);
+          }
+        }
+        for (Object module : modules) {
+          redefineModule.invoke(
+              instrumentation,
+              module,
+              Collections.singleton(target),
+              Collections.emptyMap(),
+              Collections.emptyMap(),
+              Collections.emptySet(),
+              Collections.emptyMap());
+        }
+      } catch (Exception e) {
+        throw new IllegalStateException(
+            join(
+                "Could not adjust module graph to make the mock instance dispatcher visible to some classes",
+                "",
+                "At least one of those modules: "
+                    + modules
+                    + " is not reading the unnamed module of the bootstrap loader",
+                "Without such a read edge, the classes that are redefined to become mocks cannot access the mock dispatcher.",
+                "To circumvent this, Mockito attempted to add a read edge to this module what failed for an unexpected reason"),
+            e);
       }
-      for (Object module : modules) {
-        redefineModule.invoke(
-            instrumentation,
-            module,
-            Collections.singleton(target),
-            Collections.emptyMap(),
-            Collections.emptyMap(),
-            Collections.emptySet(),
-            Collections.emptyMap());
-      }
-    } catch (Exception e) {
-      throw new IllegalStateException(
-          join(
-              "Could not adjust module graph to make the mock instance dispatcher visible to some classes",
-              "",
-              "At least one of those modules: "
-                  + modules
-                  + " is not reading the unnamed module of the bootstrap loader",
-              "Without such a read edge, the classes that are redefined to become mocks cannot access the mock dispatcher.",
-              "To circumvent this, Mockito attempted to add a read edge to this module what failed for an unexpected reason"),
-          e);
     }
-  }
 
   private <T> void checkSupportedCombination(
       boolean subclassingRequired, MockFeatures<T> features) {
