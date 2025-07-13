@@ -10,7 +10,6 @@ import static org.mockito.internal.exceptions.Reporter.delegatedMethodHasWrongRe
 import java.io.Serializable;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import javax.annotation.Nullable;
 import org.mockito.internal.configuration.plugins.Plugins;
 import org.mockito.invocation.Invocation;
 import org.mockito.invocation.InvocationOnMock;
@@ -25,7 +24,7 @@ import org.mockito.stubbing.Answer;
 public class ForwardsInvocations implements Answer<Object>, Serializable {
   private static final long serialVersionUID = -8343690268123254910L;
 
-  @Nullable private Object delegatedObject = null;
+  private Object delegatedObject = null;
 
   public ForwardsInvocations(Object delegatedObject) {
     this.delegatedObject = delegatedObject;
@@ -33,11 +32,6 @@ public class ForwardsInvocations implements Answer<Object>, Serializable {
 
   public Object answer(InvocationOnMock invocation) throws Throwable {
     Method mockMethod = invocation.getMethod();
-
-    // Ensuring delegatedObject is not null before further execution
-    if (delegatedObject == null) {
-      throw new IllegalStateException("Delegated object must not be null");
-    }
 
     try {
       Method delegateMethod = getDelegateMethod(mockMethod);
@@ -60,9 +54,6 @@ public class ForwardsInvocations implements Answer<Object>, Serializable {
   }
 
   private Method getDelegateMethod(Method mockMethod) throws NoSuchMethodException {
-    if (delegatedObject == null) {
-      throw new NullPointerException("delegatedObject is null");
-    }
     if (mockMethod.getDeclaringClass().isAssignableFrom(delegatedObject.getClass())) {
       // Compatible class. Return original method.
       return mockMethod;
